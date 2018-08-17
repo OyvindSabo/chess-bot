@@ -12,10 +12,12 @@
     function executePlayerMove(move) {
       //const move = document.getElementById("chessInput").value
       document.getElementById("chessInput").value = '';
-      chess.move(move);
-      console.log('Player move: ' + move);
-      render(chess);
-      makeBotMove(chess);
+      if (chess.moves().indexOf(move) !== -1) {
+        chess.move(move);
+        console.log('Player move: ' + move);
+        render(chess);
+        makeBotMove(chess);
+      }
     }
     
     function render(chess) {
@@ -45,7 +47,7 @@
           if((squareIndex)%8 === 0) {
             board += '<tr>';
           }
-          board += `<td ${chess.square_color(square) === 'dark' ? 'bgcolor="lightgray"': 'bgcolor="white"'} style="height:100pt;width:500pt"><center><h1>` + (chess.get(square) ? fenToUnicode[chess.get(square).color][chess.get(square).type] : '') + '</h1></center></td>';
+          board += `<td ${chess.square_color(square) === 'dark' ? 'bgcolor="lightgray"': 'bgcolor="white"'} style="height:100px;width:100px"><center><h1>` + (chess.get(square) ? fenToUnicode[chess.get(square).color][chess.get(square).type] : '') + '</h1></center></td>';
           if ((squareIndex+1)%8 === 0) {
             board += '</tr>'
           }
