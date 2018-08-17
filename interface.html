@@ -1,0 +1,96 @@
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.2/chess.js"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+<script>
+    //var Chess = require('./chess').Chess;
+    var chess = new Chess();
+    
+    function init() {
+      render(chess);
+    }
+    
+    
+    function executePlayerMove(move) {
+      //const move = document.getElementById("chessInput").value
+      document.getElementById("chessInput").value = '';
+      chess.move(move);
+      console.log('Player move: ' + move);
+      render(chess);
+      makeBotMove(chess);
+    }
+    
+    function render(chess) {
+      const fenToUnicode = {
+        'b': {
+          'b': '&#9821;',
+          'k': '&#9818;',
+          'n': '&#9822;',
+          'p': '&#9823;',
+          'q': '&#9819;',
+          'r': '&#9820;',
+        },
+        'w': {
+          'b': '&#9815;',
+          'k': '&#9812;',
+          'n': '&#9816;',
+          'p': '&#9817;',
+          'q': '&#9813;',
+          'r': '&#9814;',
+        }
+      }
+
+
+      let board = '<table>';
+      for (let squareIndex of chess.SQUARES.keys()) {
+          const square = chess.SQUARES[squareIndex];
+          if((squareIndex)%8 === 0) {
+            board += '<tr>';
+          }
+          board += `<td ${chess.square_color(square) === 'dark' ? 'bgcolor="lightgray"': 'bgcolor="white"'} style="height:100pt;width:500pt"><center><h1>` + (chess.get(square) ? fenToUnicode[chess.get(square).color][chess.get(square).type] : '') + '</h1></center></td>';
+          if ((squareIndex+1)%8 === 0) {
+            board += '</tr>'
+          }
+      }
+      
+      board += '</table>';
+      document.getElementById("chessBoard").innerHTML = board;
+      console.log(chess.ascii());
+    }
+    /*
+    while (!chess.game_over()) {
+      var moves = chess.moves();
+      console.log('moves', moves);
+      var move = moves[Math.floor(Math.random() * moves.length)];
+      chess.move(move);
+      console.log(chess.ascii());
+    }*/
+    
+    function makeBotMove(chess) {
+        const moves = chess.moves();
+        const move = moves[Math.floor(Math.random() * moves.length)];
+        chess.move(move);
+        console.log('Bot move: ' + move);
+        render(chess);
+    }
+
+    
+</script>
+
+<script>
+    /* FUNCTIONS */
+    $("button").click(function() {
+        console.log('A button was clicked')
+    })
+</script>
+
+<body onload="init()">
+  <center>
+      <div id="chessBoard">
+          <h2>Board</h2>
+      </div>
+      
+      <div>
+          <input id="chessInput" autocomplete="off" type="text" value onchange="executePlayerMove(value)">
+          <!--<button onclick="executePlayerMove()">Execute move</button>-->
+      </div>
+  </center>
+</body>
