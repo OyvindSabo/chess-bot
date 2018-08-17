@@ -17,6 +17,7 @@
         console.log('Player move: ' + move);
         render(chess);
         makeBotMove(chess);
+        console.log('chess', chess);
       }
     }
     
@@ -47,12 +48,20 @@
           if((squareIndex)%8 === 0) {
             board += '<tr>';
           }
-          board += `<td ${chess.square_color(square) === 'dark' ? 'bgcolor="lightgray"': 'bgcolor="white"'} style="height:100px;width:100px"><center><h1>` + (chess.get(square) ? fenToUnicode[chess.get(square).color][chess.get(square).type] : '') + '</h1></center></td>';
+          const history = chess.history({ verbose: true });
+          let color = chess.square_color(square) === 'dark'
+                                                     ? 'lightgray'
+                                                     : 'white'
+          if (history.length > 0 && (square === history[history.length-1].from || square === history[history.length-1].to)) {
+              color = 'yellow';
+          }
+          console.log('color', color);
+          board += '<td bgcolor="' + color + '" style="height:100px;width:100px"><center><h1>' + (chess.get(square) ? fenToUnicode[chess.get(square).color][chess.get(square).type] : '') + '</h1></center></td>';
           if ((squareIndex+1)%8 === 0) {
             board += '</tr>'
           }
       }
-      
+      console.log('board', board)
       board += '</table>';
       document.getElementById("chessBoard").innerHTML = board;
       console.log(chess.ascii());
@@ -87,7 +96,6 @@
 <body onload="init()">
   <center>
       <div id="chessBoard">
-          <h2>Board</h2>
       </div>
       
       <div>
