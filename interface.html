@@ -38,9 +38,84 @@
         return bestBoard;
     }
     
-    function findBestMove(chess, boardToMove) {
-      moves = chess.moves();
-      return moves[Math.floor(Math.random()*moves.length)];
+    function findBestMove(depth, chess, isMaximisingPlayer) {
+      var newGameMoves = chess.moves();
+      var bestMove = -9999;
+      var bestMoveFound;
+
+      for(var i = 0; i < newGameMoves.length; i++) {
+        var newGameMove = newGameMoves[i]
+        chess.move(newGameMove);
+        var value = minimax(depth - 1, chess, -10000, 10000, !isMaximisingPlayer);
+        chess.undo();
+        if(value >= bestMove) {
+            bestMove = value;
+            bestMoveFound = newGameMove;
+        }
+      }
+      return bestMoveFound;
+    };
+    
+    /* returns a value based on the future of a board */
+    function minimax (depth, chess, isMaximisingPlayer) {
+      if (depth === 0) {
+        return evaluateBoard(chess);
+      }
+      var newGameMoves = chess.moves();
+      if (isMaximisingPlayer) {
+        var bestMove = -9999;
+        for (var i = 0; i < newGameMoves.length; i++) {
+            chess.move(newGameMoves[i]);
+            bestMove = Math.max(bestMove, minimax(depth - 1, chess, !isMaximisingPlayer));
+            chess.undo();
+        }
+        return bestMove;
+      }
+      else {
+        var bestMove = 9999;
+        for (var i = 0; i < newGameMoves.length; i++) {
+            chess.move(newGameMoves[i]);
+            bestMove = Math.min(bestMove, minimax(depth - 1, chess, !isMaximisingPlayer));
+            chess.undo();
+        }
+        return bestMove;
+      }
+    };
+    
+    let EVALUATIONS=0;
+    
+    function evaluateBoard(chess) {
+        console.log(chess.ascii());
+        EVALUATIONS+=1;
+        //console.log('evaluateBoard', chess.ascii());
+        const pieceValues = {
+          'b': {
+            'b': 3,
+            'k': 10,
+            'n': 3,
+            'p': 1,
+            'q': 10,
+            'r': 5,
+          },
+          'w': {
+            'b': -3,
+            'k': -10,
+            'n': -3,
+            'p': -1,
+            'q': -10,
+            'r': -5,
+          }
+        }
+        let pieceScore = 0;
+        let piece;
+        for (let square of chess.SQUARES) {
+            piece = chess.get(square);
+            if (piece) {
+                pieceScore += pieceValues[piece.color][piece.type];
+            }
+        }
+        let score = pieceScore;
+        return score;
     }
     
     function executePlayerMove(moveString) {
@@ -50,14 +125,17 @@
         chess.move(move);
         console.log('Player move: ' + move);
         render(chess);
-        setTimeout(function(){ makeBotMove(chess) }, 2000);
+        console.log('Bot\'s board evaluation: ' + evaluateBoard(chess));
+        setTimeout(function(){ makeBotMove(chess); }, 1000);
       }
     }
     
     function makeBotMove(chess) {
-        const bestMove = findBestMove(chess);
+        const bestMove = findBestMove(2, chess, true);
         chess.move(bestMove);
         render(chess);
+        console.log('EVALUATIONS: ', EVALUATIONS)
+        EVALUATIONS=0;
     }
     
     function render(chess) {
@@ -94,7 +172,7 @@
           if (history.length > 0 && (square === history[history.length-1].from || square === history[history.length-1].to)) {
               color = 'yellow';
           }
-          board += '<td bgcolor="' + color + '" style="overflow:hidden;height:8vmin;vertical-align:middle"><center><h1 style="font-size:5vmin;">' + (chess.get(square) ? fenToUnicode[chess.get(square).color][chess.get(square).type] : '') + '</h1></center></td>';
+          board += '<td bgcolor="' + color + '" style="overflow:hidden;width:8vmin;height:8vmin;vertical-align:middle"><center><h1 style="font-size:4vmin;">' + (chess.get(square) ? fenToUnicode[chess.get(square).color][chess.get(square).type] : '&#xfeff;') + '</h1></center></td>';
           if ((squareIndex+1)%8 === 0) {
             board += '</tr>'
           }
