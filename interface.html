@@ -81,7 +81,7 @@
       }
 
 
-      let board = '<table>';
+      let board = '<table style=width:80vmin;height:80vmin>';
       for (let squareIndex of chess.SQUARES.keys()) {
           const square = chess.SQUARES[squareIndex];
           if((squareIndex)%8 === 0) {
@@ -94,7 +94,7 @@
           if (history.length > 0 && (square === history[history.length-1].from || square === history[history.length-1].to)) {
               color = 'yellow';
           }
-          board += '<td bgcolor="' + color + '" style="height:100px;width:100px"><center><h1>' + (chess.get(square) ? fenToUnicode[chess.get(square).color][chess.get(square).type] : '') + '</h1></center></td>';
+          board += '<td bgcolor="' + color + '" style="overflow:hidden;height:8vmin;vertical-align:middle"><center><h1 style="font-size:5vmin;">' + (chess.get(square) ? fenToUnicode[chess.get(square).color][chess.get(square).type] : '') + '</h1></center></td>';
           if ((squareIndex+1)%8 === 0) {
             board += '</tr>'
           }
@@ -118,9 +118,10 @@
 
 <body onload="init()">
   <center>
+      
       <div id="chessBoard">
       </div>
-      
+      <br>
       <div>
           <input style="background-color:lightyellow" id="chessInput" autocomplete="off" type="text" value onchange="executePlayerMove(value)">
           <!--<button onclick="executePlayerMove()">Execute move</button>-->
