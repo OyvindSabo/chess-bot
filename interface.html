@@ -8,17 +8,56 @@
       render(chess);
     }
     
+    function parseMove(moveString) {
+        /* Check for from to */
+        for (let move of chess.moves({ verbose: true })) {
+            if (moveString.indexOf(move.from) !== -1 && moveString.indexOf(move.to) !== -1) {
+                return move;
+            }
+        }
+        /* Check for exact Forsyth-Edwards notation */
+        for (let move of chess.moves()) {
+            if (moveString.toLowerCase().indexOf(move.toLowerCase()) !== -1) {
+                return move;
+            }
+        }
+    }
     
-    function executePlayerMove(move) {
-      //const move = document.getElementById("chessInput").value
-      document.getElementById("chessInput").value = '';
-      if (chess.moves().indexOf(move) !== -1) {
+    function fuzzyMatch(inputBoard, boardArray) {
+        let bestScore = 0;
+        let bestBoard = boardArray[0] // Just to have a default
+        for (let board of boardArray) {
+            const score = board.split('')
+                               .filter((e, i) => (e === inputBoard.charAt(i)))
+                               .length
+            if (score > bestScore) {
+                bestScore = score;
+                bestBoard = board;
+            }
+        }
+        return bestBoard;
+    }
+    
+    function findBestMove(chess, boardToMove) {
+      moves = chess.moves();
+      return moves[Math.floor(Math.random()*moves.length)];
+    }
+    
+    function executePlayerMove(moveString) {
+      const move = parseMove(moveString);
+      if (move) {
+        document.getElementById("chessInput").value = '';
         chess.move(move);
         console.log('Player move: ' + move);
         render(chess);
-        makeBotMove(chess);
-        console.log('chess', chess);
+        setTimeout(function(){ makeBotMove(chess) }, 2000);
       }
+    }
+    
+    function makeBotMove(chess) {
+        const bestMove = findBestMove(chess);
+        chess.move(bestMove);
+        render(chess);
     }
     
     function render(chess) {
@@ -55,16 +94,15 @@
           if (history.length > 0 && (square === history[history.length-1].from || square === history[history.length-1].to)) {
               color = 'yellow';
           }
-          console.log('color', color);
           board += '<td bgcolor="' + color + '" style="height:100px;width:100px"><center><h1>' + (chess.get(square) ? fenToUnicode[chess.get(square).color][chess.get(square).type] : '') + '</h1></center></td>';
           if ((squareIndex+1)%8 === 0) {
             board += '</tr>'
           }
       }
-      console.log('board', board)
       board += '</table>';
       document.getElementById("chessBoard").innerHTML = board;
       console.log(chess.ascii());
+      console.log(chess)
     }
     /*
     while (!chess.game_over()) {
@@ -74,24 +112,9 @@
       chess.move(move);
       console.log(chess.ascii());
     }*/
-    
-    function makeBotMove(chess) {
-        const moves = chess.moves();
-        const move = moves[Math.floor(Math.random() * moves.length)];
-        chess.move(move);
-        console.log('Bot move: ' + move);
-        render(chess);
-    }
 
-    
 </script>
 
-<script>
-    /* FUNCTIONS */
-    $("button").click(function() {
-        console.log('A button was clicked')
-    })
-</script>
 
 <body onload="init()">
   <center>
