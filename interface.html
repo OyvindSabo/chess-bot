@@ -3,6 +3,7 @@
 <script>
     //var Chess = require('./chess').Chess;
     var chess = new Chess();
+    let EVALUATIONS=0;
     
     function init() {
       render(chess);
@@ -46,7 +47,7 @@
       for(var i = 0; i < newGameMoves.length; i++) {
         var newGameMove = newGameMoves[i]
         chess.move(newGameMove);
-        var value = minimax(depth - 1, chess, -10000, 10000, !isMaximisingPlayer);
+        var value = minimax(depth - 1, chess, !isMaximisingPlayer);
         chess.undo();
         if(value >= bestMove) {
             bestMove = value;
@@ -82,8 +83,6 @@
       }
     };
     
-    let EVALUATIONS=0;
-    
     function evaluateBoard(chess) {
         console.log(chess.ascii());
         EVALUATIONS+=1;
@@ -115,6 +114,7 @@
             }
         }
         let score = pieceScore;
+        console.log(score);
         return score;
     }
     
