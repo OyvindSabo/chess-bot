@@ -4,9 +4,42 @@
     //var Chess = require('./chess').Chess;
     var chess = new Chess();
     let EVALUATIONS=0;
+    let FROMSQUARE;
     
     function init() {
       render(chess);
+    }
+    
+    function clickSquare(square) {
+        console.log('You clicked a square' + square);
+        const piece = chess.get(square);
+        let fromSquares = [];
+        for (move of chess.moves({ verbose: true })) {
+            if (move.to === square) {
+                fromSquares.push(move.from);
+            }
+        }
+        if (square === FROMSQUARE) {
+            fromSquare = null;
+            console.log('unclicked from')
+        }
+        else if (piece && piece.color === 'w') {
+            FROMSQUARE = square;
+            console.log('from ' + FROMSQUARE);
+            //Color all squares which are end squares in valid moves from square
+        }
+        if (fromSquares.length) {
+            if (FROMSQUARE && fromSquares.indexOf(FROMSQUARE) !== -1) {
+                console.log('Move from ' + FROMSQUARE + ' to square');
+                const fromSquare = FROMSQUARE;
+                FROMSQUARE = null;
+                executePlayerMove(fromSquare+square);
+            }
+            else {
+                //Color all fromSquares
+                FROMSQUARE = null;
+            }
+        }
     }
     
     function parseMove(moveString) {
@@ -185,7 +218,7 @@
           if (history.length > 0 && (square === history[history.length-1].from || square === history[history.length-1].to)) {
               color = 'yellow';
           }
-          board += '<td bgcolor="' + color + '" style="overflow:hidden;width:8vmin;height:8vmin;vertical-align:middle"><center><h1 style="font-size:4vmin;">' + (chess.get(square) ? fenToUnicode[chess.get(square).color][chess.get(square).type] : '&#xfeff;') + '</h1></center></td>';
+          board += '<td bgcolor="' + color + '" style="overflow:hidden;width:8vmin;height:8vmin;vertical-align:middle" id="' + chess.SQUARES[squareIndex] + '" onclick=clickSquare(id)><center><h1 style="font-size:4vmin;">' + (chess.get(square) ? fenToUnicode[chess.get(square).color][chess.get(square).type] : '&#xfeff;') + '</h1></center></td>';
           if ((squareIndex+1)%8 === 0) {
             board += '</tr>'
           }
