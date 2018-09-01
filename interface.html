@@ -1,6 +1,5 @@
 <!--<script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.2/chess.js"></script>-->
-<!--If you want to use the unextended version of the chess.js library, uncomment the line above and
-  and change all ugly_move to move and all ugly_moves to moves in this file-->
+<!--If you want to use the unextended version of the chess.js library, uncomment the line above and change all ugly_move to move and all ugly_moves to moves in this file-->
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
 <script>
     var chess = new Chess();
@@ -12,7 +11,6 @@
     }
     
     function clickSquare(square) {
-        console.log('You clicked a square' + square);
         const piece = chess.get(square);
         let toSquares = [];
         for (move of chess.moves({ verbose: true })) {
@@ -23,17 +21,14 @@
         if (square === FROMSQUARE) {
             FROMSQUARE = null;
             render(chess);
-            console.log('unclicked from')
         }
         else if (piece && piece.color === 'w') {
             FROMSQUARE = square;
-            console.log('from ' + FROMSQUARE);
             toSquares.push(square);
             render(chess, toSquares)
             //Color all squares which are end squares in valid moves from square
         }
         else if (FROMSQUARE) {
-            console.log('Move from ' + FROMSQUARE + ' to square');
             const fromSquare = FROMSQUARE;
             FROMSQUARE = null;
             executePlayerMove(fromSquare+square);
@@ -105,7 +100,7 @@
             max = Math.max(max, bestMove);
             chess.undo();
             if (max >= min) {
-                console.log('Broke out of loop');
+                //console.log('Broke out of loop');
                 break maximizeLoop;
             }
         }
@@ -120,7 +115,7 @@
             min = Math.min(min, bestMove);
             chess.undo();
             if (min <= max) {
-                console.log('Broke out of loop');
+                //console.log('Broke out of loop');
                 break minimizeLoop
             }
         }
@@ -130,6 +125,14 @@
     
     function evaluateBoard(chess) {
         EVALUATIONS++
+        if (chess.in_checkmate()) {
+            if (chess.turn() === 'b') {
+                return 9999
+            }
+            else {
+                return -9999
+            }
+        } 
         //console.log(chess.ascii());
         const pieceValues = {
           'b': {
