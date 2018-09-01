@@ -40,14 +40,16 @@
     }
     
     function findBestMove(depth, chess, isMaximisingPlayer) {
-      var newGameMoves = chess.moves();
-      var bestMove = -9999;
-      var bestMoveFound;
+      let newGameMoves = chess.moves();
+      let bestMove = -9999;
+      let bestMoveFound;
+      const max = -9999;
+      const min = 9999;
 
       for(var i = 0; i < newGameMoves.length; i++) {
-        var newGameMove = newGameMoves[i]
+        let newGameMove = newGameMoves[i]
         chess.move(newGameMove);
-        var value = minimax(depth - 1, chess, !isMaximisingPlayer);
+        let value = minimax(depth - 1, chess, !isMaximisingPlayer, max, min);
         chess.undo();
         if(value >= bestMove) {
             bestMove = value;
@@ -58,35 +60,46 @@
     };
     
     /* returns a value based on the future of a board */
-    function minimax (depth, chess, isMaximisingPlayer) {
+    function minimax (depth, chess, isMaximisingPlayer, max, min) {
       if (depth === 0) {
         return evaluateBoard(chess);
       }
       var newGameMoves = chess.moves();
       if (isMaximisingPlayer) {
-        var bestMove = -9999;
+        let bestMove = -9999;
+        maximizeLoop:
         for (var i = 0; i < newGameMoves.length; i++) {
             chess.move(newGameMoves[i]);
-            bestMove = Math.max(bestMove, minimax(depth - 1, chess, !isMaximisingPlayer));
+            bestMove = Math.max(bestMove, minimax(depth - 1, chess, !isMaximisingPlayer, max, min));
+            max = Math.max(max, bestMove);
             chess.undo();
+            if (max >= min) {
+                console.log('Broke out of loop');
+                break maximizeLoop;
+            }
         }
         return bestMove;
       }
       else {
-        var bestMove = 9999;
+        let bestMove = 9999;
+        minimizeLoop:
         for (var i = 0; i < newGameMoves.length; i++) {
             chess.move(newGameMoves[i]);
-            bestMove = Math.min(bestMove, minimax(depth - 1, chess, !isMaximisingPlayer));
+            bestMove = Math.min(bestMove, minimax(depth - 1, chess, !isMaximisingPlayer, max, min));
+            min = Math.min(min, bestMove);
             chess.undo();
+            if (min <= max) {
+                console.log('Broke out of loop');
+                break minimizeLoop
+            }
         }
         return bestMove;
       }
     };
     
     function evaluateBoard(chess) {
-        console.log(chess.ascii());
-        EVALUATIONS+=1;
-        //console.log('evaluateBoard', chess.ascii());
+        EVALUATIONS++
+        //console.log(chess.ascii());
         const pieceValues = {
           'b': {
             'b': 3,
@@ -113,8 +126,8 @@
                 pieceScore += pieceValues[piece.color][piece.type];
             }
         }
-        let score = pieceScore;
-        console.log(score);
+        let score = pieceScore*10+chess.moves().length;
+        //console.log(score);
         return score;
     }
     
@@ -182,15 +195,6 @@
       console.log(chess.ascii());
       console.log(chess)
     }
-    /*
-    while (!chess.game_over()) {
-      var moves = chess.moves();
-      console.log('moves', moves);
-      var move = moves[Math.floor(Math.random() * moves.length)];
-      chess.move(move);
-      console.log(chess.ascii());
-    }*/
-
 </script>
 
 
