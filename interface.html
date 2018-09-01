@@ -13,32 +13,29 @@
     function clickSquare(square) {
         console.log('You clicked a square' + square);
         const piece = chess.get(square);
-        let fromSquares = [];
+        let toSquares = [];
         for (move of chess.moves({ verbose: true })) {
-            if (move.to === square) {
-                fromSquares.push(move.from);
+            if (move.from === square) {
+                toSquares.push(move.to);
             }
         }
         if (square === FROMSQUARE) {
-            fromSquare = null;
+            FROMSQUARE = null;
+            render(chess);
             console.log('unclicked from')
         }
         else if (piece && piece.color === 'w') {
             FROMSQUARE = square;
             console.log('from ' + FROMSQUARE);
+            toSquares.push(square);
+            render(chess, toSquares)
             //Color all squares which are end squares in valid moves from square
         }
-        if (fromSquares.length) {
-            if (FROMSQUARE && fromSquares.indexOf(FROMSQUARE) !== -1) {
-                console.log('Move from ' + FROMSQUARE + ' to square');
-                const fromSquare = FROMSQUARE;
-                FROMSQUARE = null;
-                executePlayerMove(fromSquare+square);
-            }
-            else {
-                //Color all fromSquares
-                FROMSQUARE = null;
-            }
+        else if (FROMSQUARE) {
+            console.log('Move from ' + FROMSQUARE + ' to square');
+            const fromSquare = FROMSQUARE;
+            FROMSQUARE = null;
+            executePlayerMove(fromSquare+square);
         }
     }
     
@@ -184,7 +181,7 @@
         EVALUATIONS=0;
     }
     
-    function render(chess) {
+    function render(chess, highlightedSquares = [], checkMate=false) {
       const fenToUnicode = {
         'b': {
           'b': '&#9821;',
@@ -213,9 +210,13 @@
           }
           const history = chess.history({ verbose: true });
           let color = chess.square_color(square) === 'dark'
-                                                     ? 'lightgray'
-                                                     : 'white'
+                                                   ? 'lightgray'
+                                                   : 'white';
+                                                     
           if (history.length > 0 && (square === history[history.length-1].from || square === history[history.length-1].to)) {
+              color = 'yellow';
+          }
+          if (highlightedSquares.length && highlightedSquares.indexOf(square) !== -1) {
               color = 'yellow';
           }
           board += '<td bgcolor="' + color + '" style="overflow:hidden;width:8vmin;height:8vmin;vertical-align:middle" id="' + chess.SQUARES[squareIndex] + '" onclick=clickSquare(id)><center><h1 style="font-size:4vmin;">' + (chess.get(square) ? fenToUnicode[chess.get(square).color][chess.get(square).type] : '&#xfeff;') + '</h1></center></td>';
