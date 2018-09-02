@@ -1,7 +1,7 @@
 # chess-bot
 ![Oyvind App Chess.jpg](https://cdn.steemitimages.com/DQmVVZFP7CeVukQVF6dBZ5HpqQDQynmPkhoJErhg5GxHncq/Oyvind%20App%20Chess.jpg)
 ### Introduction
-This is a chess-game in which you play aginst the computer. Apart from the game logic, which uses the chess.js library, I've made everything myself, including the whole interface, and the AI.
+This is a Chess game in which you play aginst the computer. Apart from the game logic, which uses the chess.js library, I've made everything myself, including the whole interface, and the AI.
 
 ### Getting started
 Simply copy all the code from interface.html into a JavaScript-compatible HTML file, or you can play on https://oyvind.app/chess
