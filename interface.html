@@ -76,7 +76,7 @@
         let newGameMove = newGameMoves[i]
         chess.ugly_move(newGameMove);
         let value = minimax(depth - 1, chess, !isMaximisingPlayer, max, min);
-        chess.undo();
+        chess.ugly_undo();
         if(value >= bestMove) {
             bestMove = value;
             bestMoveFound = newGameMove;
@@ -98,7 +98,7 @@
             chess.ugly_move(newGameMoves[i]);
             bestMove = Math.max(bestMove, minimax(depth - 1, chess, !isMaximisingPlayer, max, min));
             max = Math.max(max, bestMove);
-            chess.undo();
+            chess.ugly_undo();
             if (max >= min) {
                 //console.log('Broke out of loop');
                 break maximizeLoop;
@@ -113,7 +113,7 @@
             chess.ugly_move(newGameMoves[i]);
             bestMove = Math.min(bestMove, minimax(depth - 1, chess, !isMaximisingPlayer, max, min));
             min = Math.min(min, bestMove);
-            chess.undo();
+            chess.ugly_undo();
             if (min <= max) {
                 //console.log('Broke out of loop');
                 break minimizeLoop
@@ -154,13 +154,14 @@
         }
         let pieceScore = 0;
         let piece;
+        
         for (let square of chess.SQUARES) {
             piece = chess.get(square);
             if (piece) {
                 pieceScore += pieceValues[piece.color][piece.type];
             }
         }
-        let score = pieceScore*10+chess.ugly_moves().length;
+        let score = pieceScore;
         //console.log(score);
         return score;
     }

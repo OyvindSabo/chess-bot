@@ -1612,7 +1612,11 @@ var Chess = function(fen) {
 
       return pretty_move;
     },
-
+    
+    ugly_undo: function() {
+      return undo_move();
+    },
+    
     undo: function() {
       var move = undo_move();
       return (move) ? make_pretty(move) : null;
