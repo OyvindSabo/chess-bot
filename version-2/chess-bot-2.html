@@ -2,21 +2,22 @@
 <!--If you want to use the unextended version of the chess.js library, uncomment the line above and change all ugly_move to move and all ugly_moves to moves in this file-->
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
 <script>
-    let NUMBEROFPLYS = 6;
-    let BOTCOLOR = 'w';
+    let NUMBEROFPLYS = 4;
+    let BOTCOLOR = 'b';
 
     const chess = new Chess();
-    let EVALUATIONS=0;
+    let EVALUATIONS = 0;
+    let QUIESCENCEEXTENSION = 0;
     let FROMSQUARE;
     let ISMAXIMIZINGPLAYER;
     
     function init() {
       render(chess);
       if (BOTCOLOR === 'b') {
-        ISMAXIMIZINGPLAYER = BOTCOLOR === true;
+        ISMAXIMIZINGPLAYER = false;
       }
       else {
-        ISMAXIMIZINGPLAYER = false;
+        ISMAXIMIZINGPLAYER = true;
         setTimeout(function(){ makeBotMove(chess); }, 100);
           
       }
@@ -80,38 +81,52 @@
         return bestBoard;
     }
     
-    function findBestMove(depth, chess, isMaximisingPlayer) {
+    function findBestMove(depth, chess, isMaximizingPlayer) {
       let newGameMoves = chess.ugly_moves();
-      let bestMove = -9999;
+      let bestMove = isMaximizingPlayer ? -9999 : 9999;
       let bestMoveFound;
       const max = -9999;
       const min = 9999;
 
       for(var i = 0; i < newGameMoves.length; i++) {
         let newGameMove = newGameMoves[i]
+        console.log('foundMove: ', newGameMove);
         chess.ugly_move(newGameMove);
-        let value = minimax(depth - 1, chess, !isMaximisingPlayer, max, min);
+        let value = minimax(depth - 1, chess, !isMaximizingPlayer, max, min);
+        console.log('miniMaxValue: ' + value);
         chess.ugly_undo();
-        if(value >= bestMove) {
+        if (isMaximizingPlayer) {
+          if(value >= bestMove) {
             bestMove = value;
             bestMoveFound = newGameMove;
+          }
+        } else {
+          if (value <= bestMove) {
+            bestMove = value;
+            bestMoveFound = newGameMove;
+          }
         }
       }
       return bestMoveFound;
     };
     
     /* returns a value based on the future of a board */
-    function minimax (depth, chess, isMaximisingPlayer, max, min) {
+    function minimax (depth, chess, isMaximizingPlayer, max, min) {
+      let decrement = 1;
       if (depth === 0) {
         return evaluateBoard(chess);
       }
-      var newGameMoves = chess.ugly_moves();
-      if (isMaximisingPlayer) {
+      var gameMoves = chess.ugly_moves();
+      if (isMaximizingPlayer) {
         let bestMove = -9999;
         maximizeLoop:
-        for (var i = 0; i < newGameMoves.length; i++) {
-            chess.ugly_move(newGameMoves[i]);
-            bestMove = Math.max(bestMove, minimax(depth - 1, chess, !isMaximisingPlayer, max, min));
+        for (let i = 0; i < gameMoves.length; i++) {
+            chess.ugly_move(gameMoves[i]);
+            if (depth === 1) {
+              decrement = gameMoves[i]['flags'] === 2 ? 0 : 1;
+              QUIESCENCEEXTENSION = gameMoves[i]['flags'] === 2 ? QUIESCENCEEXTENSION : QUIESCENCEEXTENSION;
+            }
+            bestMove = Math.max(bestMove, minimax(depth - decrement, chess, !isMaximizingPlayer, max, min));
             max = Math.max(max, bestMove);
             chess.ugly_undo();
             if (max >= min) {
@@ -124,9 +139,14 @@
       else {
         let bestMove = 9999;
         minimizeLoop:
-        for (var i = 0; i < newGameMoves.length; i++) {
-            chess.ugly_move(newGameMoves[i]);
-            bestMove = Math.min(bestMove, minimax(depth - 1, chess, !isMaximisingPlayer, max, min));
+        for (let i = 0; i < gameMoves.length; i++) {
+            chess.ugly_move(gameMoves[i]);
+            if (depth === 1) {
+              //console.log("gameMoves[i]['flags']", gameMoves[i]['flags'])
+              decrement = gameMoves[i]['flags'] === 2 ? 0 : 1;
+              QUIESCENCEEXTENSION = gameMoves[i]['flags'] === 2 ? QUIESCENCEEXTENSION + 1 : QUIESCENCEEXTENSION;
+            }
+            bestMove = Math.min(bestMove, minimax(depth - decrement, chess, !isMaximizingPlayer, max, min));
             min = Math.min(min, bestMove);
             chess.ugly_undo();
             if (min <= max) {
@@ -140,12 +160,13 @@
     
     function evaluateBoard(chess) {
         EVALUATIONS++
+        turn = chess.turn();
         if (chess.in_checkmate()) {
-            if (chess.turn() === 'b') {
-                return 9999
+            if (turn === 'w') {
+                return -9999
             }
             else {
-                return -9999
+                return 9999
             }
         } 
         //console.log(chess.ascii());
@@ -176,7 +197,7 @@
                 pieceScore += pieceValues[piece.color][piece.type];
             }
         }
-        let score = BOTCOLOR === 'w' ? pieceScore : -pieceScore;
+        let score = pieceScore;
         //console.log(score);
         return score;
     }
@@ -195,9 +216,11 @@
     
     function makeBotMove(chess) {
         const bestMove = findBestMove(NUMBEROFPLYS, chess, ISMAXIMIZINGPLAYER);
+        console.log('bestMove: ', bestMove);
         chess.ugly_move(bestMove);
         render(chess);
-        console.log('EVALUATIONS: ', EVALUATIONS)
+        console.log('EVALUATIONS: ', EVALUATIONS);
+        console.log('QUIESCENCEEXTENSIONS: ', QUIESCENCEEXTENSION);
         EVALUATIONS=0;
     }
     
