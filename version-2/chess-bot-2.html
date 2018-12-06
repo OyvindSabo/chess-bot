@@ -2,16 +2,27 @@
 <!--If you want to use the unextended version of the chess.js library, uncomment the line above and change all ugly_move to move and all ugly_moves to moves in this file-->
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
 <script>
-    let NUMBEROFPLYS = 5;
+    let NUMBEROFPLYS = 6;
+    let BOTCOLOR = 'w';
 
-    var chess = new Chess();
+    const chess = new Chess();
     let EVALUATIONS=0;
     let FROMSQUARE;
+    let ISMAXIMIZINGPLAYER;
     
     function init() {
       render(chess);
+      if (BOTCOLOR === 'b') {
+        ISMAXIMIZINGPLAYER = BOTCOLOR === true;
+      }
+      else {
+        ISMAXIMIZINGPLAYER = false;
+        setTimeout(function(){ makeBotMove(chess); }, 100);
+          
+      }
     }
     
+    /* Handle click */
     function clickSquare(square) {
         const piece = chess.get(square);
         let toSquares = [];
@@ -24,7 +35,7 @@
             FROMSQUARE = null;
             render(chess);
         }
-        else if (piece && piece.color === 'w') {
+        else if (piece && piece.color !== BOTCOLOR) {
             FROMSQUARE = square;
             toSquares.push(square);
             render(chess, toSquares)
@@ -37,6 +48,7 @@
         }
     }
     
+    /* Translate string to valid move */
     function parseMove(moveString) {
         /* Check for from to */
         for (let move of chess.moves({ verbose: true })) {
@@ -52,6 +64,7 @@
         }
     }
     
+    /* I don't think this function is used anymore */
     function fuzzyMatch(inputBoard, boardArray) {
         let bestScore = 0;
         let bestBoard = boardArray[0] // Just to have a default
@@ -138,20 +151,20 @@
         //console.log(chess.ascii());
         const pieceValues = {
           'b': {
-            'b': 3,
-            'k': 10,
-            'n': 3,
-            'p': 1,
-            'q': 10,
-            'r': 5,
-          },
-          'w': {
             'b': -3,
             'k': -10,
             'n': -3,
             'p': -1,
             'q': -10,
             'r': -5,
+          },
+          'w': {
+            'b': 3,
+            'k': 10,
+            'n': 3,
+            'p': 1,
+            'q': 10,
+            'r': 5,
           }
         }
         let pieceScore = 0;
@@ -163,7 +176,7 @@
                 pieceScore += pieceValues[piece.color][piece.type];
             }
         }
-        let score = pieceScore;
+        let score = BOTCOLOR === 'w' ? pieceScore : -pieceScore;
         //console.log(score);
         return score;
     }
@@ -181,7 +194,7 @@
     }
     
     function makeBotMove(chess) {
-        const bestMove = findBestMove(NUMBEROFPLYS, chess, true);
+        const bestMove = findBestMove(NUMBEROFPLYS, chess, ISMAXIMIZINGPLAYER);
         chess.ugly_move(bestMove);
         render(chess);
         console.log('EVALUATIONS: ', EVALUATIONS)
