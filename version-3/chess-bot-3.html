@@ -2,14 +2,20 @@
 <!--If you want to use the unextended version of the chess.js library, uncomment the line above and change all ugly_move to move and all ugly_moves to moves in this file-->
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
 <script>
-    let NUMBEROFPLYS = 4;
+    /* Global tweakable specs */
+    let NUMBEROFPLYS = 6;
     let BOTCOLOR = 'b';
-
+    
+    /* Global necessary variables */
     const chess = new Chess();
-    let EVALUATIONS = 0;
-    let QUIESCENCEEXTENSION = 0;
     let FROMSQUARE;
     let ISMAXIMIZINGPLAYER;
+    let EVALUATEDBOARDS = {}; // Score for a given board
+    let EVALUATEDMOVES = {}; // Best move for a given board
+    
+    /* Just for analytics/debugging */
+    let QUIESCENCEEXTENSION = 0;
+    let EVALUATIONS = 0;
     
     function init() {
       render(chess);
@@ -88,6 +94,7 @@
       const max = -9999;
       const min = 9999;
 
+      newGameMoves.sort()
       for(var i = 0; i < newGameMoves.length; i++) {
         let newGameMove = newGameMoves[i]
         console.log('foundMove: ', newGameMove);
@@ -107,6 +114,8 @@
           }
         }
       }
+      //EVALUATEDBOARDS = {};
+      //EVALUATEDMOVES = {}
       return bestMoveFound;
     };
     
@@ -116,7 +125,8 @@
       if (depth === 0) {
         return evaluateBoard(chess);
       }
-      var gameMoves = chess.ugly_moves();
+      let gameMoves = chess.ugly_moves();
+      //gameMoves.sort((a, b) => KILLERMOVES[a.from + a.to + a.piece] ? -1 : 1);
       if (isMaximizingPlayer) {
         let bestMove = -9999;
         maximizeLoop:
@@ -124,13 +134,22 @@
             chess.ugly_move(gameMoves[i]);
             if (depth === 1) {
               decrement = gameMoves[i]['flags'] === 2 ? 0 : 1;
-              QUIESCENCEEXTENSION = gameMoves[i]['flags'] === 2 ? QUIESCENCEEXTENSION : QUIESCENCEEXTENSION;
+              QUIESCENCEEXTENSION = gameMoves[i]['flags'] === 2 ? QUIESCENCEEXTENSION +1 : QUIESCENCEEXTENSION;
             }
-            bestMove = Math.max(bestMove, minimax(depth - decrement, chess, !isMaximizingPlayer, max, min));
+            
+            let currentMove;
+            if (EVALUATEDBOARDS[chess.ascii()]) {
+              currentMove = EVALUATEDBOARDS[chess.ascii()];
+              //console.log('Reused evaluation');
+            } else {
+              currentMove = minimax(depth - decrement, chess, !isMaximizingPlayer, max, min);
+              EVALUATEDBOARDS[chess.ascii()] = currentMove;
+            }
+            
+            bestMove = Math.max(bestMove, currentMove);
             max = Math.max(max, bestMove);
             chess.ugly_undo();
             if (max >= min) {
-                //console.log('Broke out of loop');
                 break maximizeLoop;
             }
         }
@@ -146,7 +165,17 @@
               decrement = gameMoves[i]['flags'] === 2 ? 0 : 1;
               QUIESCENCEEXTENSION = gameMoves[i]['flags'] === 2 ? QUIESCENCEEXTENSION + 1 : QUIESCENCEEXTENSION;
             }
-            bestMove = Math.min(bestMove, minimax(depth - decrement, chess, !isMaximizingPlayer, max, min));
+            
+            let currentMove;
+            if (EVALUATEDBOARDS[chess.ascii()]) {
+              currentMove = EVALUATEDBOARDS[chess.ascii()];
+              //console.log('Reused evaluation');
+            } else {
+              currentMove = minimax(depth - decrement, chess, !isMaximizingPlayer, max, min);
+              EVALUATEDBOARDS[chess.ascii()] = currentMove;
+            }
+            
+            bestMove = Math.min(bestMove, currentMove);
             min = Math.min(min, bestMove);
             chess.ugly_undo();
             if (min <= max) {
