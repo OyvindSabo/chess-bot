@@ -4,6 +4,7 @@
 <script>
     /* Global tweakable specs */
     let NUMBEROFPLYS = 4;
+    let MAXNUMBEROFPLYS = 4;
     let BOTCOLOR = 'b';
     
     /* Global necessary variables */
@@ -11,6 +12,7 @@
     let FROMSQUARE;
     let ISMAXIMIZINGPLAYER;
     let EVALUATEDBOARDS = {}; // Score for a given board
+    let CURRENTPLY = 0;
     
     /* Just for analytics/debugging */
     let QUIESCENCEEXTENSION = 0;
@@ -100,6 +102,7 @@
         chess.ugly_move(newGameMove);
         let value = minimax(depth - 1, chess, !isMaximizingPlayer, max, min);
         console.log('miniMaxValue: ' + value);
+        console.log('CURRENTPLY: ', CURRENTPLY);
         chess.ugly_undo();
         if (isMaximizingPlayer) {
           if(value >= bestMove) {
@@ -112,6 +115,7 @@
             bestMoveFound = newGameMove;
           }
         }
+        console.log('bestMoveFound: ', bestMoveFound);
       }
       EVALUATEDBOARDS = {};
       return bestMoveFound;
@@ -119,41 +123,83 @@
     
     /* returns a value based on the future of a board */
     function minimax (depth, chess, isMaximizingPlayer, max, min) {
+      //console.log('CURRENTPLY START OF MINIMAX: ', CURRENTPLY);
+      CURRENTPLY++;
       let decrement = 1;
       if (depth === 0) {
+          CURRENTPLY--;
         return evaluateBoard(chess);
       }
       let gameMoves = chess.ugly_moves();
       let bestMove = isMaximizingPlayer ? -9999 : 9999;
-      loop:
+      let uninterestingMoves = [];
+      let broke = false;
+      
+      goodLoop:
       for (let i = 0; i < gameMoves.length; i++) {
-        chess.ugly_move(gameMoves[i]);
+        if (gameMoves[i]['flags'] === 2) {
+          chess.ugly_move(gameMoves[i]);
         
-        // Quiescence search
-        decrement = depth === 1 && gameMoves[i]['flags'] === 2 ? 0 : 1;
-        QUIESCENCEEXTENSION += depth === 1 && gameMoves[i]['flags'] === 2 ? 1 : 0;
+          // Quiescence search
+          decrement = depth === 1 && CURRENTPLY < MAXNUMBEROFPLYS ? 0 : 1;
+          QUIESCENCEEXTENSION += depth === 1 && gameMoves[i]['flags'] === 2 ? 1 : 0;
         
-        // Potentially set score to previously evaluated
-        let currentMove = EVALUATEDBOARDS[chess.fen()]
-          || minimax(depth - decrement, chess, !isMaximizingPlayer, max, min);
-        EVALUATEDBOARDS[chess.fen()] = currentMove;
+          // Potentially set score to previously evaluated
+          let currentMove = EVALUATEDBOARDS[chess.fen()]
+            || minimax(depth - decrement, chess, !isMaximizingPlayer, max, min);
+          EVALUATEDBOARDS[chess.fen()] = currentMove;
             
-        chess.ugly_undo();
-        if (isMaximizingPlayer) {
-          bestMove = Math.max(bestMove, currentMove);
-          max = Math.max(max, bestMove);
-          if (max >= min) {
-            break loop;
+          chess.ugly_undo();
+          if (isMaximizingPlayer) {
+            bestMove = Math.max(bestMove, currentMove);
+            max = Math.max(max, bestMove);
+            if (max >= min) {
+              broke = true;
+              break goodLoop;
+            }
+          } else {
+            bestMove = Math.min(bestMove, currentMove);
+            min = Math.min(min, bestMove);
+            if (min <= max) {
+              //console.log('Broke out of loop');
+              broke = true;
+              break goodLoop;
+            }
           }
         } else {
-          bestMove = Math.min(bestMove, currentMove);
-          min = Math.min(min, bestMove);
-          if (min <= max) {
-            //console.log('Broke out of loop');
-            break loop;
+          uninterestingMoves.push(gameMoves[i]);
+          continue;
+        }
+      }
+      //console.log('uninterestingMoves: ', uninterestingMoves);
+      badLoop:
+      if (!broke) {
+        for (let i = 0; i < uninterestingMoves.length; i++) {
+          chess.ugly_move(gameMoves[i]);
+        
+          // Potentially set score to previously evaluated
+          let currentMove = EVALUATEDBOARDS[chess.fen()]
+            || minimax(depth - decrement, chess, !isMaximizingPlayer, max, min);
+          EVALUATEDBOARDS[chess.fen()] = currentMove;
+            
+          chess.ugly_undo();
+          if (isMaximizingPlayer) {
+            bestMove = Math.max(bestMove, currentMove);
+            max = Math.max(max, bestMove);
+            if (max >= min) {
+              break badLoop;
+            }
+          } else {
+            bestMove = Math.min(bestMove, currentMove);
+            min = Math.min(min, bestMove);
+            if (min <= max) {
+              break badLoop;
+            }
           }
         }
       }
+      CURRENTPLY--;
+      //console.log('CURRENTPLY END OF MINIMAX: ', CURRENTPLY);
       return bestMove;
     };
     
@@ -219,6 +265,7 @@
     }
     
     function makeBotMove(chess) {
+        console.log('makeBotMove');
         const bestMove = findBestMove(NUMBEROFPLYS, chess, ISMAXIMIZINGPLAYER);
         console.log('bestMove: ', bestMove);
         chess.ugly_move(bestMove);
