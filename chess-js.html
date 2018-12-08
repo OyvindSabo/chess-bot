@@ -1558,6 +1558,10 @@ var Chess = function(fen) {
     turn: function() {
       return turn;
     },
+
+    set_turn: function(newTurn) {
+      turn = newTurn;
+    },
     
     ugly_move: function(move) {
       make_move(move);

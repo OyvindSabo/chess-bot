@@ -3,7 +3,7 @@
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
 <script>
     /* Global tweakable specs */
-    let NUMBEROFPLYS = 6;
+    let NUMBEROFPLYS = 4;
     let BOTCOLOR = 'b';
     
     /* Global necessary variables */
@@ -11,7 +11,6 @@
     let FROMSQUARE;
     let ISMAXIMIZINGPLAYER;
     let EVALUATEDBOARDS = {}; // Score for a given board
-    let EVALUATEDMOVES = {}; // Best move for a given board
     
     /* Just for analytics/debugging */
     let QUIESCENCEEXTENSION = 0;
@@ -114,8 +113,7 @@
           }
         }
       }
-      //EVALUATEDBOARDS = {};
-      //EVALUATEDMOVES = {}
+      EVALUATEDBOARDS = {};
       return bestMoveFound;
     };
     
@@ -126,7 +124,6 @@
         return evaluateBoard(chess);
       }
       let gameMoves = chess.ugly_moves();
-      //gameMoves.sort((a, b) => KILLERMOVES[a.from + a.to + a.piece] ? -1 : 1);
       if (isMaximizingPlayer) {
         let bestMove = -9999;
         maximizeLoop:
@@ -138,12 +135,12 @@
             }
             
             let currentMove;
-            if (EVALUATEDBOARDS[chess.ascii()]) {
-              currentMove = EVALUATEDBOARDS[chess.ascii()];
+            if (EVALUATEDBOARDS[chess.fen()]) {
+              currentMove = EVALUATEDBOARDS[chess.fen()];
               //console.log('Reused evaluation');
             } else {
               currentMove = minimax(depth - decrement, chess, !isMaximizingPlayer, max, min);
-              EVALUATEDBOARDS[chess.ascii()] = currentMove;
+              EVALUATEDBOARDS[chess.fen()] = currentMove;
             }
             
             bestMove = Math.max(bestMove, currentMove);
@@ -161,18 +158,17 @@
         for (let i = 0; i < gameMoves.length; i++) {
             chess.ugly_move(gameMoves[i]);
             if (depth === 1) {
-              //console.log("gameMoves[i]['flags']", gameMoves[i]['flags'])
               decrement = gameMoves[i]['flags'] === 2 ? 0 : 1;
               QUIESCENCEEXTENSION = gameMoves[i]['flags'] === 2 ? QUIESCENCEEXTENSION + 1 : QUIESCENCEEXTENSION;
             }
             
             let currentMove;
-            if (EVALUATEDBOARDS[chess.ascii()]) {
-              currentMove = EVALUATEDBOARDS[chess.ascii()];
+            if (EVALUATEDBOARDS[chess.fen()]) {
+              currentMove = EVALUATEDBOARDS[chess.fen()];
               //console.log('Reused evaluation');
             } else {
               currentMove = minimax(depth - decrement, chess, !isMaximizingPlayer, max, min);
-              EVALUATEDBOARDS[chess.ascii()] = currentMove;
+              EVALUATEDBOARDS[chess.fen()] = currentMove;
             }
             
             bestMove = Math.min(bestMove, currentMove);
@@ -226,7 +222,12 @@
                 pieceScore += pieceValues[piece.color][piece.type];
             }
         }
-        let score = pieceScore;
+        let moveScore = chess.ugly_moves().length;
+        chess.set_turn(turn === 'W' ? 'b' : 'w');
+        moveScore -= chess.ugly_moves().length
+        chess.set_turn(chess.turn() === 'w' ? 'b' : 'w');
+        moveScore = turn === 'w' ? moveScore : -moveScore;
+        let score = pieceScore+moveScore;
         //console.log(score);
         return score;
     }
