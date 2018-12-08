@@ -3,9 +3,10 @@
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
 <script>
     /* Global tweakable specs */
-    let NUMBEROFPLYS = 2;
-    let MAXNUMBEROFPLYS = 6;
+    let NUMBEROFPLYS = 4;
+    let MAXNUMBEROFPLYS = 4;
     let BOTCOLOR = 'b';
+    let IMPROVEMENTTRESHOLD = 5; // Treshold for how good a move needs to be accepted, even if it's not the best move
     
     /* Global necessary variables */
     const chess = new Chess();
@@ -13,6 +14,7 @@
     let ISMAXIMIZINGPLAYER;
     let EVALUATEDBOARDS = {}; // Score for a given board
     let CURRENTPLY = 0;
+    let PREVIOUSVALUE = 0;
     
     /* Just for analytics/debugging */
     let QUIESCENCEEXTENSION = 0;
@@ -96,6 +98,7 @@
       const min = 9999;
 
       newGameMoves.sort()
+      loop:
       for(var i = 0; i < newGameMoves.length; i++) {
         let newGameMove = newGameMoves[i]
         console.log('foundMove: ', newGameMove);
@@ -109,14 +112,22 @@
             bestMove = value;
             bestMoveFound = newGameMove;
           }
+          if (bestMove > PREVIOUSVALUE + IMPROVEMENTTRESHOLD) {
+              break loop;
+          }
         } else {
           if (value <= bestMove) {
             bestMove = value;
             bestMoveFound = newGameMove;
           }
+          if (bestMove < PREVIOUSVALUE - IMPROVEMENTTRESHOLD) {
+              break loop;
+          }
         }
         console.log('bestMoveFound: ', bestMoveFound);
       }
+      PREVIOUSVALUE = bestMove;
+      console.log('White\'s board evaluation: ' + PREVIOUSVALUE);
       EVALUATEDBOARDS = {};
       return bestMoveFound;
     };
@@ -157,7 +168,7 @@
               broke = true;
               break goodLoop;
             }
-          } else {
+          } else { // if isMinimizingPlayer
             bestMove = Math.min(bestMove, currentMove);
             min = Math.min(min, bestMove);
             if (min <= max) {
@@ -189,7 +200,7 @@
             if (max >= min) {
               break badLoop;
             }
-          } else {
+          } else { // if isMinimizingPlayer
             bestMove = Math.min(bestMove, currentMove);
             min = Math.min(min, bestMove);
             if (min <= max) {
@@ -259,7 +270,6 @@
         chess.move(move);
         console.log('Player move: ' + move);
         render(chess);
-        console.log('Bot\'s board evaluation: ' + evaluateBoard(chess));
         setTimeout(function(){ makeBotMove(chess); }, 100);
       }
     }
@@ -267,7 +277,6 @@
     function makeBotMove(chess) {
         console.log('makeBotMove');
         const bestMove = findBestMove(NUMBEROFPLYS, chess, ISMAXIMIZINGPLAYER);
-        console.log('bestMove: ', bestMove);
         chess.ugly_move(bestMove);
         render(chess);
         console.log('EVALUATIONS: ', EVALUATIONS);
