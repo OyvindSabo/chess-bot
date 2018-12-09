@@ -1,401 +1,399 @@
 <!--<script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.2/chess.js"></script>-->
 <!--If you want to use the unextended version of the chess.js library, uncomment the line above and change all ugly_move to move and all ugly_moves to moves in this file-->
-<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+<!--<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>-->
 <script>
-    /* Global tweakable specs */
-    let NUMBEROFPLYS = 5;
-    let MAXNUMBEROFPLYS = 5;
-    let BOTCOLOR = 'b';
-    let IMPROVEMENTTRESHOLD = 10; // Treshold for how good a move needs to be accepted, even if it's not the best move
-    
-    /* Global necessary variables */
-    const chess = new Chess();
-    let FROMSQUARE;
-    let ISMAXIMIZINGPLAYER;
-    let EVALUATEDBOARDS = {}; // Score for a given board
-    let CURRENTPLY = 0;
-    let PREVIOUSVALUE = 0;
-    let AVAILABLEMOVES = {};
-    
-    /* Just for analytics/debugging */
-    let QUIESCENCEEXTENSION = 0;
-    let EVALUATIONS = 0;
-    
-    function init() {
-      render(chess);
-      if (BOTCOLOR === 'b') {
-        ISMAXIMIZINGPLAYER = false;
-      }
-      else {
-        ISMAXIMIZINGPLAYER = true;
-        setTimeout(function(){ makeBotMove(chess); }, 100);
-          
-      }
+  /* Global tweakable specs */
+  let NUMBEROFPLYS = 5;
+  let MAXNUMBEROFPLYS = 5;
+  let BOTCOLOR = 'b';
+  let IMPROVEMENTTRESHOLD = 10; // Treshold for how good a move needs to be accepted, even if it's not the best move
+  
+  /* Global necessary variables */
+  const CHESS = new Chess();
+  let FROMSQUARE;
+  let ISMAXIMIZINGPLAYER;
+  let EVALUATEDBOARDS = {}; // Score for a given board
+  let CURRENTPLY = 0;
+  let PREVIOUSVALUE = 0;
+  let AVAILABLEMOVES = {};
+  
+  /* Just for analytics/debugging */
+  let QUIESCENCEEXTENSION = 0;
+  let EVALUATIONS = 0;
+  
+  function init() {
+    render();
+    if (BOTCOLOR === 'b') {
+      ISMAXIMIZINGPLAYER = false;
     }
-    
-    /* Handle click */
-    function clickSquare(square) {
-        const piece = chess.get(square);
-        let toSquares = [];
-        for (move of chess.moves({ verbose: true })) {
-            if (move.from === square) {
-                toSquares.push(move.to);
-            }
-        }
-        if (square === FROMSQUARE) {
-            FROMSQUARE = null;
-            render(chess);
-        }
-        else if (piece && piece.color !== BOTCOLOR) {
-            FROMSQUARE = square;
-            toSquares.push(square);
-            render(chess, toSquares)
-            //Color all squares which are end squares in valid moves from square
-        }
-        else if (FROMSQUARE) {
-            const fromSquare = FROMSQUARE;
-            FROMSQUARE = null;
-            executePlayerMove(fromSquare+square);
-        }
+    else {
+      ISMAXIMIZINGPLAYER = true;
+      setTimeout(function(){ makeBotMove(CHESS); }, 100);
+        
     }
-    
-    /* Translate string to valid move */
-    function parseMove(moveString) {
-        /* Check for from to */
-        for (let move of chess.moves({ verbose: true })) {
-            if (moveString.indexOf(move.from) !== -1 && moveString.indexOf(move.to) !== -1) {
-                return move;
-            }
-        }
-        /* Check for exact Forsyth-Edwards notation */
-        for (let move of chess.moves()) {
-            if (moveString.toLowerCase().indexOf(move.toLowerCase()) !== -1) {
-                return move;
-            }
-        }
-    }
-    
-    /* I don't think this function is used anymore */
-    function fuzzyMatch(inputBoard, boardArray) {
-        let bestScore = 0;
-        let bestBoard = boardArray[0] // Just to have a default
-        for (let board of boardArray) {
-            const score = board.split('')
-                               .filter((e, i) => (e === inputBoard.charAt(i)))
-                               .length
-            if (score > bestScore) {
-                bestScore = score;
-                bestBoard = board;
-            }
-        }
-        return bestBoard;
-    }
-    
-    function findBestMove(depth, chess, isMaximizingPlayer) {
-      CURRENTPLY++;
-      let newGameMoves = chess.ugly_moves();
-      let bestMove = isMaximizingPlayer ? -9999 : 9999;
-      let bestMoveFound;
-      const max = -9999;
-      const min = 9999;
-
-      let uninterestingMoves = [];
-      let broke = false;
-
-      goodLoop:
-      for(var i = 0; i < newGameMoves.length; i++) {
-        if (newGameMoves[i]['flags'] === 2) {
-          let newGameMove = newGameMoves[i]
-          console.log('foundMove: ', newGameMove);
-          chess.ugly_move(newGameMove);
-          let value = minimax(depth - 1, chess, !isMaximizingPlayer, max, min);
-          console.log('miniMaxValue: ' + value);
-          console.log('CURRENTPLY: ', CURRENTPLY);
-          chess.ugly_undo();
-          if (isMaximizingPlayer) {
-            if(value >= bestMove) {
-              bestMove = value;
-              bestMoveFound = newGameMove;
-            }
-            if (bestMove > PREVIOUSVALUE + IMPROVEMENTTRESHOLD) {
-              broke = true;
-              break goodLoop;
-            }
-          } else {
-            if (value <= bestMove) {
-              bestMove = value;
-              bestMoveFound = newGameMove;
-            }
-            if (bestMove < PREVIOUSVALUE - IMPROVEMENTTRESHOLD) {
-              broke = true;
-              break goodLoop;
-            }
+  }
+  
+  /* Handle click */
+  function clickSquare(square) {
+      const piece = CHESS.get(square);
+      let toSquares = [];
+      for (move of CHESS.moves({ verbose: true })) {
+          if (move.from === square) {
+              toSquares.push(move.to);
           }
-          console.log('bestMoveFound: ', bestMoveFound);
+      }
+      if (square === FROMSQUARE) {
+          FROMSQUARE = null;
+          render();
+      }
+      else if (piece && piece.color !== BOTCOLOR) {
+          FROMSQUARE = square;
+          toSquares.push(square);
+          render(toSquares)
+          //Color all squares which are end squares in valid moves from square
+      }
+      else if (FROMSQUARE) {
+          const fromSquare = FROMSQUARE;
+          FROMSQUARE = null;
+          executePlayerMove(fromSquare+square);
+      }
+  }
+  
+  /* Translate string to valid move */
+  function parseMove(moveString) {
+      /* Check for from to */
+      for (let move of CHESS.moves({ verbose: true })) {
+          if (moveString.indexOf(move.from) !== -1 && moveString.indexOf(move.to) !== -1) {
+              return move;
+          }
+      }
+      /* Check for exact Forsyth-Edwards notation */
+      for (let move of CHESS.moves()) {
+          if (moveString.toLowerCase().indexOf(move.toLowerCase()) !== -1) {
+              return move;
+          }
+      }
+  }
+  
+  /* I don't think this function is used anymore */
+  function fuzzyMatch(inputBoard, boardArray) {
+      let bestScore = 0;
+      let bestBoard = boardArray[0] // Just to have a default
+      for (let board of boardArray) {
+          const score = board.split('')
+                             .filter((e, i) => (e === inputBoard.charAt(i)))
+                             .length
+          if (score > bestScore) {
+              bestScore = score;
+              bestBoard = board;
+          }
+      }
+      return bestBoard;
+  }
+  
+  function findBestMove(depth, chess, isMaximizingPlayer) {
+    CURRENTPLY++;
+    let newGameMoves = chess.ugly_moves();
+    let bestMove = isMaximizingPlayer ? -9999 : 9999;
+    let bestMoveFound;
+    const max = -9999;
+    const min = 9999;
+
+    let uninterestingMoves = [];
+    let broke = false;
+
+    goodLoop:
+    for(var i = 0; i < newGameMoves.length; i++) {
+      if (newGameMoves[i]['flags'] === 2) {
+        let newGameMove = newGameMoves[i]
+        console.log('foundMove: ', newGameMove);
+        chess.ugly_move(newGameMove);
+        let value = minimax(depth - 1, chess, !isMaximizingPlayer, max, min);
+        console.log('miniMaxValue: ' + value);
+        console.log('CURRENTPLY: ', CURRENTPLY);
+        chess.ugly_undo();
+        if (isMaximizingPlayer) {
+          if(value >= bestMove) {
+            bestMove = value;
+            bestMoveFound = newGameMove;
+          }
+          if (bestMove > PREVIOUSVALUE + IMPROVEMENTTRESHOLD) {
+            broke = true;
+            break goodLoop;
+          }
         } else {
-          uninterestingMoves.push(newGameMoves[i]);
-        }
-      }
-      
-      if (!broke) {
-        badLoop:
-        for(var i = 0; i < uninterestingMoves.length; i++) {
-          let newGameMove = uninterestingMoves[i]
-          chess.ugly_move(newGameMove);
-          let value = minimax(depth - 1, chess, !isMaximizingPlayer, max, min);
-          chess.ugly_undo();
-          if (isMaximizingPlayer) {
-            if(value >= bestMove) {
-              bestMove = value;
-              bestMoveFound = newGameMove;
-              if (bestMove > PREVIOUSVALUE + IMPROVEMENTTRESHOLD) {
-                break badLoop;
-              }
-            }
-          } else {
-            if (value <= bestMove) {
-              bestMove = value;
-              bestMoveFound = newGameMove;
-              if (bestMove < PREVIOUSVALUE - IMPROVEMENTTRESHOLD) {
-                break badLoop;
-              }
-            }
+          if (value <= bestMove) {
+            bestMove = value;
+            bestMoveFound = newGameMove;
+          }
+          if (bestMove < PREVIOUSVALUE - IMPROVEMENTTRESHOLD) {
+            broke = true;
+            break goodLoop;
           }
         }
-        CURRENTPLY--;
-      }
-      
-      
-      PREVIOUSVALUE = bestMove;
-      console.log('White\'s board evaluation: ' + PREVIOUSVALUE);
-      EVALUATEDBOARDS = {};
-      AVAILABLEMOVES = {};
-      return bestMoveFound;
-    };
-    
-    /* returns a value based on the future of a board */
-    function minimax (depth, chess, isMaximizingPlayer, max, min) {
-      CURRENTPLY++;
-      let decrement = 1;
-      if (depth === 0) {
-          CURRENTPLY--;
-        return evaluateBoard(chess);
-      }
-
-      let gameMoves;
-      let boardFen = chess.fen();
-      if (AVAILABLEMOVES[boardFen]) {
-        gameMoves = AVAILABLEMOVES[boardFen];
+        console.log('bestMoveFound: ', bestMoveFound);
       } else {
-        gameMoves = chess.ugly_moves();
-        AVAILABLEMOVES[boardFen] = gameMoves;
+        uninterestingMoves.push(newGameMoves[i]);
       }
-      
-      let bestMove = isMaximizingPlayer ? -9999 : 9999;
-      let uninterestingMoves = [];
-      let broke = false;
-      
-      goodLoop:
-      for (let i = 0; i < gameMoves.length; i++) {
-        if (gameMoves[i]['flags'] === 2) {
-          chess.ugly_move(gameMoves[i]);
-        
-          // Quiescence search
-          decrement = depth === 1 && CURRENTPLY < MAXNUMBEROFPLYS ? 0 : 1;
-          QUIESCENCEEXTENSION += (depth === 1 && gameMoves[i]['flags'] === 2 && CURRENTPLY < MAXNUMBEROFPLYS) ? 1 : 0;
-        
-          // Potentially set score to previously evaluated
-          let boardFen = chess.fen();
-          let currentMove = EVALUATEDBOARDS[boardFen]
-            || minimax(depth - decrement, chess, !isMaximizingPlayer, max, min);
-          EVALUATEDBOARDS[boardFen] = currentMove;
-            
-          chess.ugly_undo();
-          if (isMaximizingPlayer) {
-            bestMove = Math.max(bestMove, currentMove);
-            max = Math.max(max, bestMove);
-            if (max >= min) {
-              broke = true;
-              break goodLoop;
-            }
-          } else { // if isMinimizingPlayer
-            bestMove = Math.min(bestMove, currentMove);
-            min = Math.min(min, bestMove);
-            if (min <= max) {
-              broke = true;
-              break goodLoop;
-            }
-          }
-        } else {
-          uninterestingMoves.push(gameMoves[i]);
-        }
-      }
-      if (!broke) {
-        badLoop:
-        for (let i = 0; i < uninterestingMoves.length; i++) {
-          chess.ugly_move(uninterestingMoves[i]);
-        
-          // Potentially set score to previously evaluated
-          let boardFen = chess.fen();
-          let currentMove = EVALUATEDBOARDS[boardFen]
-            || minimax(depth - decrement, chess, !isMaximizingPlayer, max, min);
-          EVALUATEDBOARDS[boardFen] = currentMove;
-            
-          chess.ugly_undo();
-          if (isMaximizingPlayer) {
-            bestMove = Math.max(bestMove, currentMove);
-            max = Math.max(max, bestMove);
-            if (max >= min) {
+    }
+    
+    if (!broke) {
+      badLoop:
+      for(var i = 0; i < uninterestingMoves.length; i++) {
+        let newGameMove = uninterestingMoves[i]
+        chess.ugly_move(newGameMove);
+        let value = minimax(depth - 1, chess, !isMaximizingPlayer, max, min);
+        chess.ugly_undo();
+        if (isMaximizingPlayer) {
+          if(value >= bestMove) {
+            bestMove = value;
+            bestMoveFound = newGameMove;
+            if (bestMove > PREVIOUSVALUE + IMPROVEMENTTRESHOLD) {
               break badLoop;
             }
-          } else { // if isMinimizingPlayer
-            bestMove = Math.min(bestMove, currentMove);
-            min = Math.min(min, bestMove);
-            if (min <= max) {
+          }
+        } else {
+          if (value <= bestMove) {
+            bestMove = value;
+            bestMoveFound = newGameMove;
+            if (bestMove < PREVIOUSVALUE - IMPROVEMENTTRESHOLD) {
               break badLoop;
             }
           }
         }
       }
       CURRENTPLY--;
-      //console.log('CURRENTPLY END OF MINIMAX: ', CURRENTPLY);
-      return bestMove;
-    };
+    }
     
-    function evaluateBoard(chess) {
-        EVALUATIONS++
-        turn = chess.turn();
-        if (chess.in_checkmate()) {
-            if (turn === 'w') {
-                return -9999
-            }
-            else {
-                return 9999
-            }
-        } 
-        const pieceValues = {
-          'b': {
-            'b': -3,
-            'k': -9999,
-            'n': -3,
-            'p': -1,
-            'q': -10,
-            'r': -5,
-          },
-          'w': {
-            'b': 3,
-            'k': 9999,
-            'n': 3,
-            'p': 1,
-            'q': 10,
-            'r': 5,
+    
+    PREVIOUSVALUE = bestMove;
+    console.log('White\'s board evaluation: ' + PREVIOUSVALUE);
+    EVALUATEDBOARDS = {};
+    AVAILABLEMOVES = {};
+    return bestMoveFound;
+  };
+  
+  /* returns a value based on the future of a board */
+  function minimax (depth, chess, isMaximizingPlayer, max, min) {
+    CURRENTPLY++;
+    let decrement = 1;
+    if (depth === 0) {
+        CURRENTPLY--;
+      return evaluateBoard(chess);
+    }
+
+    let gameMoves;
+    let boardFen = chess.fen();
+    if (AVAILABLEMOVES[boardFen]) {
+      gameMoves = AVAILABLEMOVES[boardFen];
+    } else {
+      gameMoves = chess.ugly_moves();
+      AVAILABLEMOVES[boardFen] = gameMoves;
+    }
+    
+    let bestMove = isMaximizingPlayer ? -9999 : 9999;
+    let uninterestingMoves = [];
+    let broke = false;
+    
+    goodLoop:
+    for (let i = 0; i < gameMoves.length; i++) {
+      if (gameMoves[i]['flags'] === 2) {
+        chess.ugly_move(gameMoves[i]);
+      
+        // Quiescence search
+        decrement = depth === 1 && CURRENTPLY < MAXNUMBEROFPLYS ? 0 : 1;
+        QUIESCENCEEXTENSION += (depth === 1 && gameMoves[i]['flags'] === 2 && CURRENTPLY < MAXNUMBEROFPLYS) ? 1 : 0;
+      
+        // Potentially set score to previously evaluated
+        let boardFen = chess.fen();
+        let currentMove = EVALUATEDBOARDS[boardFen]
+          || minimax(depth - decrement, chess, !isMaximizingPlayer, max, min);
+        EVALUATEDBOARDS[boardFen] = currentMove;
+          
+        chess.ugly_undo();
+        if (isMaximizingPlayer) {
+          bestMove = Math.max(bestMove, currentMove);
+          max = Math.max(max, bestMove);
+          if (max >= min) {
+            broke = true;
+            break goodLoop;
+          }
+        } else { // if isMinimizingPlayer
+          bestMove = Math.min(bestMove, currentMove);
+          min = Math.min(min, bestMove);
+          if (min <= max) {
+            broke = true;
+            break goodLoop;
           }
         }
-        let pieceScore = 0;
-        let piece;
-        
-        for (let square of chess.SQUARES) {
-            piece = chess.get(square);
-            if (piece) {
-                pieceScore += pieceValues[piece.color][piece.type];
-            }
-        }
-        let availableMoves;
-        let boardFen = chess.fen();
-        if (AVAILABLEMOVES[boardFen]) {
-            availableMoves = AVAILABLEMOVES[boardFen];
-            console.log('Reused stored moves :)')
-        } else {
-            availableMoves = chess.ugly_moves();
-        }
-        let moveScore = availableMoves.length*0.25;
-        chess.set_turn(turn === 'W' ? 'b' : 'w');
-        moveScore -= chess.ugly_moves().length*0.25
-        chess.set_turn(chess.turn() === 'w' ? 'b' : 'w');
-        moveScore = turn === 'w' ? moveScore : -moveScore;
-        let score = pieceScore+moveScore;
-        //console.log(score);
-        return score;
-    }
-    
-    function executePlayerMove(moveString) {
-      const move = parseMove(moveString);
-      if (move) {
-        document.getElementById("chessInput").value = '';
-        chess.move(move);
-        render(chess);
-        setTimeout(function(){ makeBotMove(chess); }, 100);
+      } else {
+        uninterestingMoves.push(gameMoves[i]);
       }
     }
-    
-    function makeBotMove(chess) {
-        const bestMove = findBestMove(NUMBEROFPLYS, chess, ISMAXIMIZINGPLAYER);
-        chess.ugly_move(bestMove);
-        render(chess);
-        console.log('EVALUATIONS: ', EVALUATIONS);
-        console.log('QUIESCENCEEXTENSIONS: ', QUIESCENCEEXTENSION);
-        EVALUATIONS=0;
+    if (!broke) {
+      badLoop:
+      for (let i = 0; i < uninterestingMoves.length; i++) {
+        chess.ugly_move(uninterestingMoves[i]);
+      
+        // Potentially set score to previously evaluated
+        let boardFen = chess.fen();
+        let currentMove = EVALUATEDBOARDS[boardFen]
+          || minimax(depth - decrement, chess, !isMaximizingPlayer, max, min);
+        EVALUATEDBOARDS[boardFen] = currentMove;
+          
+        chess.ugly_undo();
+        if (isMaximizingPlayer) {
+          bestMove = Math.max(bestMove, currentMove);
+          max = Math.max(max, bestMove);
+          if (max >= min) {
+            break badLoop;
+          }
+        } else { // if isMinimizingPlayer
+          bestMove = Math.min(bestMove, currentMove);
+          min = Math.min(min, bestMove);
+          if (min <= max) {
+            break badLoop;
+          }
+        }
+      }
     }
-    
-    /* Draw the chess board */
-    function render(chess, highlightedSquares = [], checkMate=false) {
-      const fenToUnicode = {
+    CURRENTPLY--;
+    return bestMove;
+  };
+  
+  function evaluateBoard(chess) {
+      EVALUATIONS++
+      turn = chess.turn();
+      if (chess.in_checkmate()) {
+          if (turn === 'w') {
+              return -9999
+          }
+          else {
+              return 9999
+          }
+      } 
+      const pieceValues = {
         'b': {
-          'b': '&#9821;',
-          'k': '&#9818;',
-          'n': '&#9822;',
-          'p': '&#9823;',
-          'q': '&#9819;',
-          'r': '&#9820;',
+          'b': -3,
+          'k': -9999,
+          'n': -3,
+          'p': -1,
+          'q': -10,
+          'r': -5,
         },
         'w': {
-          'b': '&#9815;',
-          'k': '&#9812;',
-          'n': '&#9816;',
-          'p': '&#9817;',
-          'q': '&#9813;',
-          'r': '&#9814;',
+          'b': 3,
+          'k': 9999,
+          'n': 3,
+          'p': 1,
+          'q': 10,
+          'r': 5,
         }
       }
-
-
-      let board = '<table style=width:80vmin;height:80vmin>';
-      for (let squareIndex of chess.SQUARES.keys()) {
-          const square = chess.SQUARES[squareIndex];
-          if((squareIndex)%8 === 0) {
-            board += '<tr>';
-          }
-          const history = chess.history({ verbose: true });
-          let color = chess.square_color(square) === 'dark'
-                                                   ? 'lightgray'
-                                                   : 'white';
-                                                     
-          if (history.length > 0 && (square === history[history.length-1].from || square === history[history.length-1].to)) {
-              color = 'yellow';
-          }
-          if (highlightedSquares.length && highlightedSquares.indexOf(square) !== -1) {
-              color = 'yellow';
-          }
-          board += '<td bgcolor="' + color + '" style="overflow:hidden;width:8vmin;height:8vmin;vertical-align:middle" id="' + chess.SQUARES[squareIndex] + '" onclick=clickSquare(id)><center><h1 style="font-size:4vmin;">' + (chess.get(square) ? fenToUnicode[chess.get(square).color][chess.get(square).type] : '&#xfeff;') + '</h1></center></td>';
-          if ((squareIndex+1)%8 === 0) {
-            board += '</tr>'
-          }
+      let pieceScore = 0;
+      
+      for (let square of chess.SQUARES) {
+        const piece = chess.get(square);
+        if (piece) {
+          pieceScore += pieceValues[piece.color][piece.type];
+        }
       }
-      board += '</table>';
-      document.getElementById("chessBoard").innerHTML = board;
+      let availableMoves;
+      let boardFen = chess.fen();
+      if (AVAILABLEMOVES[boardFen]) {
+          availableMoves = AVAILABLEMOVES[boardFen];
+          //console.log('Reused stored moves :)')
+      } else {
+          availableMoves = chess.ugly_moves();
+          AVAILABLEMOVES[boardFen] = availableMoves;
+      }
+      let moveScore = availableMoves.length;
+      chess.set_turn(turn === 'W' ? 'b' : 'w');
+      moveScore -= chess.ugly_moves().length;
+      chess.set_turn(chess.turn() === 'w' ? 'b' : 'w');
+      moveScore = turn === 'w' ? moveScore : -moveScore;
+      let score = 10*pieceScore+moveScore;
+      return score;
+  }
+  
+  function executePlayerMove(moveString) {
+    const move = parseMove(moveString);
+    if (move) {
+      document.getElementById("chessInput").value = '';
+      CHESS.move(move);
+      render();
+      setTimeout(function(){ makeBotMove(); }, 100);
     }
+  }
+  
+  function makeBotMove() {
+      const bestMove = findBestMove(NUMBEROFPLYS, CHESS, ISMAXIMIZINGPLAYER);
+      CHESS.ugly_move(bestMove);
+      render();
+      console.log('EVALUATIONS: ', EVALUATIONS);
+      console.log('QUIESCENCEEXTENSIONS: ', QUIESCENCEEXTENSION);
+      EVALUATIONS=0;
+  }
+  
+  /* Draw the chess board */
+  function render(highlightedSquares = [], checkMate=false) {
+    const fenToUnicode = {
+      'b': {
+        'b': '&#9821;',
+        'k': '&#9818;',
+        'n': '&#9822;',
+        'p': '&#9823;',
+        'q': '&#9819;',
+        'r': '&#9820;',
+      },
+      'w': {
+        'b': '&#9815;',
+        'k': '&#9812;',
+        'n': '&#9816;',
+        'p': '&#9817;',
+        'q': '&#9813;',
+        'r': '&#9814;',
+      }
+    }
+
+
+    let board = '<table style=width:80vmin;height:80vmin>';
+    for (let squareIndex of CHESS.SQUARES.keys()) {
+        const square = CHESS.SQUARES[squareIndex];
+        if((squareIndex)%8 === 0) {
+          board += '<tr>';
+        }
+        const history = CHESS.history({ verbose: true });
+        let color = CHESS.square_color(square) === 'dark'
+                                                 ? 'lightgray'
+                                                 : 'white';
+                                                   
+        if (history.length > 0 && (square === history[history.length-1].from || square === history[history.length-1].to)) {
+            color = 'yellow';
+        }
+        if (highlightedSquares.length && highlightedSquares.indexOf(square) !== -1) {
+            color = 'yellow';
+        }
+        board += '<td bgcolor="' + color + '" style="overflow:hidden;width:8vmin;height:8vmin;vertical-align:middle" id="' + CHESS.SQUARES[squareIndex] + '" onclick=clickSquare(id)><center><h1 style="font-size:4vmin;">' + (CHESS.get(square) ? fenToUnicode[CHESS.get(square).color][CHESS.get(square).type] : '&#xfeff;') + '</h1></center></td>';
+        if ((squareIndex+1)%8 === 0) {
+          board += '</tr>'
+        }
+    }
+    board += '</table>';
+    document.getElementById("chessBoard").innerHTML = board;
+  }
 </script>
 
 
 <body onload="init()">
-  <center>
-      
-      <div id="chessBoard">
-      </div>
-      <br>
-      <div>
-          <input style="background-color:lightyellow" id="chessInput" autocomplete="off" type="text" value onchange="executePlayerMove(value)">
-          <!--<button onclick="executePlayerMove()">Execute move</button>-->
-      </div>
-  </center>
+<center>
+    
+    <div id="chessBoard">
+    </div>
+    <br>
+    <div>
+        <input style="background-color:lightyellow" id="chessInput" autocomplete="off" type="text" value onchange="executePlayerMove(value)">
+        <!--<button onclick="executePlayerMove()">Execute move</button>-->
+    </div>
+</center>
 </body>
