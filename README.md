@@ -31,6 +31,7 @@ Simply download the index.html file and open it in a browser. Alternatively, you
 - Base search depth: 4
 - Alpha-beta pruning
 - Earlier alpha-beta cutoff by considering capture moves first
+- Caches scores of evaluated boards to prevent evaluating the same board multiple times
 - Evaluation: Aggregated value of pieces + number of possible moves for maximizing player - number of possible moves for minimizing player
 - Quiescence search
 
