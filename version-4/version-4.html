@@ -3,7 +3,7 @@
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
 <script>
     /* Global tweakable specs */
-    let NUMBEROFPLYS = 4;
+    let NUMBEROFPLYS = 5;
     let MAXNUMBEROFPLYS = 5;
     let BOTCOLOR = 'b';
     let IMPROVEMENTTRESHOLD = 10; // Treshold for how good a move needs to be accepted, even if it's not the best move
@@ -169,7 +169,7 @@
       PREVIOUSVALUE = bestMove;
       console.log('White\'s board evaluation: ' + PREVIOUSVALUE);
       EVALUATEDBOARDS = {};
-      //AVAILABLEMOVES = {};
+      AVAILABLEMOVES = {};
       return bestMoveFound;
     };
     
@@ -181,8 +181,16 @@
           CURRENTPLY--;
         return evaluateBoard(chess);
       }
-      let gameMoves = chess.ugly_moves();
-      AVAILABLEMOVES[chess.fen()] = gameMoves;
+
+      let gameMoves;
+      let boardFen = chess.fen();
+      if (AVAILABLEMOVES[boardFen]) {
+        gameMoves = AVAILABLEMOVES[boardFen];
+      } else {
+        gameMoves = chess.ugly_moves();
+        AVAILABLEMOVES[boardFen] = gameMoves;
+      }
+      
       let bestMove = isMaximizingPlayer ? -9999 : 9999;
       let uninterestingMoves = [];
       let broke = false;
@@ -197,9 +205,10 @@
           QUIESCENCEEXTENSION += (depth === 1 && gameMoves[i]['flags'] === 2 && CURRENTPLY < MAXNUMBEROFPLYS) ? 1 : 0;
         
           // Potentially set score to previously evaluated
-          let currentMove = EVALUATEDBOARDS[chess.fen()]
+          let boardFen = chess.fen();
+          let currentMove = EVALUATEDBOARDS[boardFen]
             || minimax(depth - decrement, chess, !isMaximizingPlayer, max, min);
-          EVALUATEDBOARDS[chess.fen()] = currentMove;
+          EVALUATEDBOARDS[boardFen] = currentMove;
             
           chess.ugly_undo();
           if (isMaximizingPlayer) {
@@ -224,12 +233,13 @@
       if (!broke) {
         badLoop:
         for (let i = 0; i < uninterestingMoves.length; i++) {
-          chess.ugly_move(gameMoves[i]);
+          chess.ugly_move(uninterestingMoves[i]);
         
           // Potentially set score to previously evaluated
-          let currentMove = EVALUATEDBOARDS[chess.fen()]
+          let boardFen = chess.fen();
+          let currentMove = EVALUATEDBOARDS[boardFen]
             || minimax(depth - decrement, chess, !isMaximizingPlayer, max, min);
-          EVALUATEDBOARDS[chess.fen()] = currentMove;
+          EVALUATEDBOARDS[boardFen] = currentMove;
             
           chess.ugly_undo();
           if (isMaximizingPlayer) {
@@ -291,11 +301,11 @@
             }
         }
         let availableMoves;
-        if (AVAILABLEMOVES[chess.fen()]) {
-            availableMoves = AVAILABLEMOVES[chess.fen()];
+        let boardFen = chess.fen();
+        if (AVAILABLEMOVES[boardFen]) {
+            availableMoves = AVAILABLEMOVES[boardFen];
             console.log('Reused stored moves :)')
-        }
-        else {
+        } else {
             availableMoves = chess.ugly_moves();
         }
         let moveScore = availableMoves.length*0.25;
