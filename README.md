@@ -35,5 +35,15 @@ Simply download the index.html file and open it in a browser. Alternatively, you
 - Evaluation: Aggregated value of pieces + number of possible moves for maximizing player - number of possible moves for minimizing player
 - Quiescence search
 
+**Version 4**
+- Minimax
+- Base search depth: 4
+- Alpha-beta pruning
+- Earlier alpha-beta cutoff by considering capture moves first
+- Caches scores of evaluated boards to prevent evaluating the same board multiple times
+- Caches available moves for evaluated boards to prevent finding legal moves for the same board multiple times
+- Evaluation: Aggregated value of pieces + number of possible moves for maximizing player - number of possible moves for minimizing player
+- Quiescence search
+
 ### How many moves ahead does the bot evaluate?
 Right now, the bot thinks four moves ahead. The deeper the search, the more the alpha-beta comes into effect before searching deeper. I need to optimize the AI quite a bit before it's able to think further ahead. At the top of the chess-bot-x.html file, there is a line `let NUMBEROFPLYS = 4;` To make the bot search 6 moves forwards, simply change 4 to 6. I'm not quite sure, but the bot might only accept an even depth.

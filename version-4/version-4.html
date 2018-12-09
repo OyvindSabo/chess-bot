@@ -3,7 +3,7 @@
 <!--<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>-->
 <script>
   /* Global tweakable specs */
-  let NUMBEROFPLYS = 5;
+  let NUMBEROFPLYS = 2;
   let MAXNUMBEROFPLYS = 5;
   let BOTCOLOR = 'b';
   let IMPROVEMENTTRESHOLD = 10; // Treshold for how good a move needs to be accepted, even if it's not the best move
@@ -103,14 +103,11 @@
     let broke = false;
 
     goodLoop:
-    for(var i = 0; i < newGameMoves.length; i++) {
+    for(let i = 0; i < newGameMoves.length; i++) {
       if (newGameMoves[i]['flags'] === 2) {
         let newGameMove = newGameMoves[i]
-        console.log('foundMove: ', newGameMove);
         chess.ugly_move(newGameMove);
         let value = minimax(depth - 1, chess, !isMaximizingPlayer, max, min);
-        console.log('miniMaxValue: ' + value);
-        console.log('CURRENTPLY: ', CURRENTPLY);
         chess.ugly_undo();
         if (isMaximizingPlayer) {
           if(value >= bestMove) {
@@ -131,7 +128,6 @@
             break goodLoop;
           }
         }
-        console.log('bestMoveFound: ', bestMoveFound);
       } else {
         uninterestingMoves.push(newGameMoves[i]);
       }
@@ -333,6 +329,14 @@
       console.log('EVALUATIONS: ', EVALUATIONS);
       console.log('QUIESCENCEEXTENSIONS: ', QUIESCENCEEXTENSION);
       EVALUATIONS=0;
+      if (CHESS.in_checkmate()) {
+          if (CHESS.turn() === 'w') {
+              setTimeout(function() { alert('Checkmate! Black won!'); }, 100);
+          }
+          else {
+              setTimeout(function() { alert('Checkmate! White won!'); }, 100);
+          }
+      } 
   }
   
   /* Draw the chess board */
