@@ -3,10 +3,10 @@
 <!--<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>-->
 <script>
   /* Global tweakable specs */
-  let NUMBEROFPLYS = 4;
-  let MAXNUMBEROFPLYS = 4;
+  let NUMBEROFPLYS = 2;
+  let MAXNUMBEROFPLYS = 5;
   let BOTCOLOR = 'b';
-  let IMPROVEMENTTRESHOLD = 100; // Treshold for how good a move needs to be accepted, even if it's not the best move
+  let IMPROVEMENTTRESHOLD = 10; // Treshold for how good a move needs to be accepted, even if it's not the best move
   
   /* Global necessary variables */
   const CHESS = new Chess();
@@ -128,7 +128,6 @@
             break goodLoop;
           }
         }
-        console.log('Evaluated move');
       } else {
         uninterestingMoves.push(newGameMoves[i]);
       }
@@ -158,7 +157,6 @@
             }
           }
         }
-        console.log('Evaluated move');
       }
       CURRENTPLY--;
     }
