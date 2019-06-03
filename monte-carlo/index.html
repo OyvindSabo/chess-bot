@@ -1,0 +1,283 @@
+<!--<script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.2/chess.js"></script>-->
+<!--If you want to use the unextended version of the chess.js library, uncomment the line above and change all ugly_move to move and all ugly_moves to moves in this file-->
+<!--<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>-->
+<script src="chess.js"></script>
+<script>
+  /* Global tweakable specs */
+  const MAX_DEPTH = 10;
+  const NUMBER_OF_GAMES = 10000;
+
+  let BOT_COLOR = 'b';
+  
+  /* Global necessary variables */
+  const CHESS = new Chess();
+  let FROMSQUARE;
+  let ISMAXIMIZINGPLAYER;
+  let EVALUATEDBOARDS = {}; // Score for a given board
+  let CURRENTPLY = 0;
+  let PREVIOUSVALUE = 0;
+  let AVAILABLEMOVES = {};
+  
+  /* Just for analytics/debugging */
+  let QUIESCENCEEXTENSION = 0;
+  let EVALUATIONS = 0;
+  
+  function init() {
+    render();
+    if (BOT_COLOR === 'b') {
+      ISMAXIMIZINGPLAYER = false;
+    }
+    else {
+      ISMAXIMIZINGPLAYER = true;
+      setTimeout(function(){ makeBotMove(CHESS); }, 100);
+        
+    }
+  }
+  
+  /* Handle click */
+  function clickSquare(square) {
+      const piece = CHESS.get(square);
+      let toSquares = [];
+      for (move of CHESS.moves({ verbose: true })) {
+          if (move.from === square) {
+              toSquares.push(move.to);
+          }
+      }
+      if (square === FROMSQUARE) {
+          FROMSQUARE = null;
+          render();
+      }
+      else if (piece && piece.color !== BOT_COLOR) {
+          FROMSQUARE = square;
+          toSquares.push(square);
+          render(toSquares)
+          //Color all squares which are end squares in valid moves from square
+      }
+      else if (FROMSQUARE) {
+          const fromSquare = FROMSQUARE;
+          FROMSQUARE = null;
+          executePlayerMove(fromSquare+square);
+      }
+  }
+  
+  /* Translate string to valid move */
+  function parseMove(moveString) {
+      /* Check for from to */
+      for (let move of CHESS.moves({ verbose: true })) {
+          if (moveString.indexOf(move.from) !== -1 && moveString.indexOf(move.to) !== -1) {
+              return move;
+          }
+      }
+      /* Check for exact Forsyth-Edwards notation */
+      for (let move of CHESS.moves()) {
+          if (moveString.toLowerCase().indexOf(move.toLowerCase()) !== -1) {
+              return move;
+          }
+      }
+  }
+  
+  /* I don't think this function is used anymore */
+  function fuzzyMatch(inputBoard, boardArray) {
+      let bestScore = 0;
+      let bestBoard = boardArray[0] // Just to have a default
+      for (let board of boardArray) {
+          const score = board.split('')
+                             .filter((e, i) => (e === inputBoard.charAt(i)))
+                             .length
+          if (score > bestScore) {
+              bestScore = score;
+              bestBoard = board;
+          }
+      }
+      return bestBoard;
+  }
+  
+  function findBestMove(chess, maxDepth, numberOfGames) {
+    const moves = chess.ugly_moves();
+    let bestMove = moves[0];
+    let bestMoveScore = -Infinity;
+    const movesScores = moves.map(move => []);
+    for (let gameIndex = 0; gameIndex < numberOfGames; gameIndex++) {
+      // Make some random moves
+      let actualDepth = maxDepth;
+      // Generate random first move
+      const firstMoveIndex = Math.floor(Math.random() * moves.length);
+      const firstMove = moves[firstMoveIndex];
+      chess.ugly_move(firstMove);
+      // Make random moves until end of game or max depth
+      for (let depthIndex = 0; depthIndex < maxDepth; depthIndex++) {
+        const moves = chess.ugly_moves();
+        if (!moves.length) {
+          actualDepth = depthIndex;
+          break;
+        } else {
+          const move = moves[Math.floor(Math.random() * moves.length)];
+          chess.ugly_move(move);
+        }
+      }
+      const scoreForThisMove = evaluateBoard(chess);
+      movesScores[firstMoveIndex].push(scoreForThisMove);
+      // Undo the moves
+      for (let depthIndex = 0; depthIndex < actualDepth; depthIndex++) {
+        chess.ugly_undo();
+      }
+      chess.ugly_undo();
+    }
+    // We now have scores for a lot of moves, and we want to find the best move
+    const evaluatedMoves = Object.keys(movesScores);
+    for (let moveIndex = 0; moveIndex < evaluatedMoves.length; moveIndex++) {
+      const moveScores = movesScores[evaluatedMoves[moveIndex]];
+      const averageMoveScore = moveScores.reduce((a, b) => a + b) * (BOT_COLOR === 'b' ? -1 : 1)/moveScores.length;
+      //console.log("averagMoveScore: ", averageMoveScore);
+      if (averageMoveScore > bestMoveScore) {
+        bestMoveScore = averageMoveScore;
+        bestMove = moves[moveIndex];
+      }
+    }
+    console.log("bestMoveScore: ", bestMoveScore);
+    console.log("bestMove: ", bestMove);
+    return bestMove;
+  }
+  
+  function evaluateBoard(chess) {
+      EVALUATIONS++
+      turn = chess.turn();
+      if (chess.in_checkmate()) {
+          if (turn === 'w') {
+              return -9999
+          }
+          else {
+              return 9999
+          }
+      } 
+      const pieceValues = {
+        'b': {
+          'b': -3,
+          'k': -9999,
+          'n': -3,
+          'p': -1,
+          'q': -10,
+          'r': -5,
+        },
+        'w': {
+          'b': 3,
+          'k': 9999,
+          'n': 3,
+          'p': 1,
+          'q': 10,
+          'r': 5,
+        }
+      }
+      let pieceScore = 0;
+      
+      for (let square of chess.SQUARES) {
+        const piece = chess.get(square);
+        if (piece) {
+          pieceScore += pieceValues[piece.color][piece.type];
+        }
+      }
+      let availableMoves;
+      let boardFen = chess.fen();
+      if (AVAILABLEMOVES[boardFen]) {
+          availableMoves = AVAILABLEMOVES[boardFen];
+          //console.log('Reused stored moves :)')
+      } else {
+          availableMoves = chess.ugly_moves();
+          AVAILABLEMOVES[boardFen] = availableMoves;
+      }
+      let moveScore = availableMoves.length;
+      chess.set_turn(turn === 'W' ? 'b' : 'w');
+      moveScore -= chess.ugly_moves().length;
+      chess.set_turn(chess.turn() === 'w' ? 'b' : 'w');
+      moveScore = turn === 'w' ? moveScore : -moveScore;
+      let score = 10*pieceScore+moveScore;
+      return score;
+  }
+  
+  function executePlayerMove(moveString) {
+    const move = parseMove(moveString);
+    if (move) {
+      document.getElementById("chessInput").value = '';
+      CHESS.move(move);
+      render();
+      setTimeout(function(){ makeBotMove(); }, 100);
+    }
+  }
+  
+  function makeBotMove() {
+      const bestMove = findBestMove(CHESS, MAX_DEPTH, NUMBER_OF_GAMES);
+      CHESS.ugly_move(bestMove);
+      render();
+      EVALUATIONS=0;
+      if (CHESS.in_checkmate()) {
+          if (CHESS.turn() === 'w') {
+              setTimeout(function() { alert('Checkmate! Black won!'); }, 100);
+          }
+          else {
+              setTimeout(function() { alert('Checkmate! White won!'); }, 100);
+          }
+      } 
+  }
+  
+  /* Draw the chess board */
+  function render(highlightedSquares = [], checkMate=false) {
+    const fenToUnicode = {
+      'b': {
+        'b': '&#9821;',
+        'k': '&#9818;',
+        'n': '&#9822;',
+        'p': '&#9823;',
+        'q': '&#9819;',
+        'r': '&#9820;',
+      },
+      'w': {
+        'b': '&#9815;',
+        'k': '&#9812;',
+        'n': '&#9816;',
+        'p': '&#9817;',
+        'q': '&#9813;',
+        'r': '&#9814;',
+      }
+    }
+
+
+    let board = '<table style=width:80vmin;height:80vmin>';
+    for (let squareIndex of CHESS.SQUARES.keys()) {
+        const square = CHESS.SQUARES[squareIndex];
+        if((squareIndex)%8 === 0) {
+          board += '<tr>';
+        }
+        const history = CHESS.history({ verbose: true });
+        let color = CHESS.square_color(square) === 'dark'
+                                                 ? 'lightgray'
+                                                 : 'white';
+                                                   
+        if (history.length > 0 && (square === history[history.length-1].from || square === history[history.length-1].to)) {
+            color = 'yellow';
+        }
+        if (highlightedSquares.length && highlightedSquares.indexOf(square) !== -1) {
+            color = 'yellow';
+        }
+        board += '<td bgcolor="' + color + '" style="overflow:hidden;width:8vmin;height:8vmin;vertical-align:middle" id="' + CHESS.SQUARES[squareIndex] + '" onclick=clickSquare(id)><center><h1 style="font-size:4vmin;">' + (CHESS.get(square) ? fenToUnicode[CHESS.get(square).color][CHESS.get(square).type] : '&#xfeff;') + '</h1></center></td>';
+        if ((squareIndex+1)%8 === 0) {
+          board += '</tr>'
+        }
+    }
+    board += '</table>';
+    document.getElementById("chessBoard").innerHTML = board;
+  }
+</script>
+
+
+<body onload="init()">
+<center>
+    
+    <div id="chessBoard">
+    </div>
+    <br>
+    <div>
+        <input style="background-color:lightyellow" id="chessInput" autocomplete="off" type="text" value onchange="executePlayerMove(value)">
+        <!--<button onclick="executePlayerMove()">Execute move</button>-->
+    </div>
+</center>
+</body>
