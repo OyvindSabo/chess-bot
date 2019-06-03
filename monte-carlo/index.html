@@ -7,7 +7,7 @@
   const MAX_DEPTH = 10;
   const NUMBER_OF_GAMES = 10000;
 
-  let BOT_COLOR = 'b';
+  let BOT_COLOR = 'w';
   
   /* Global necessary variables */
   const CHESS = new Chess();
@@ -96,12 +96,20 @@
     const moves = chess.ugly_moves();
     let bestMove = moves[0];
     let bestMoveScore = -Infinity;
-    const movesScores = moves.map(move => []);
+    const movesScores = moves.map(move => ({ sum: 0, count: 0, average: 0 }));
     for (let gameIndex = 0; gameIndex < numberOfGames; gameIndex++) {
       // Make some random moves
       let actualDepth = maxDepth;
       // Generate random first move
-      const firstMoveIndex = Math.floor(Math.random() * moves.length);
+      // Every second move, reevaluate the most promising move
+      let firstMoveIndex;
+      if (gameIndex % 2 === 0) {
+        firstMoveIndex = movesScores.reduce((accumulator, scoreObject, index) => scoreObject.average > movesScores[accumulator].average ? index : accumulator, 0);
+        //console.log("Most promising move so far: ", firstMoveIndex);
+        //console.log("Most promising move's score: ", movesScores[firstMoveIndex].average);
+      } else {
+        firstMoveIndex = Math.floor(Math.random() * moves.length);
+      }
       const firstMove = moves[firstMoveIndex];
       chess.ugly_move(firstMove);
       // Make random moves until end of game or max depth
@@ -116,7 +124,9 @@
         }
       }
       const scoreForThisMove = evaluateBoard(chess);
-      movesScores[firstMoveIndex].push(scoreForThisMove);
+      movesScores[firstMoveIndex].sum += scoreForThisMove * (BOT_COLOR === 'b' ? -1 : 1);
+      movesScores[firstMoveIndex].count ++;
+      movesScores[firstMoveIndex].average = movesScores[firstMoveIndex].sum / movesScores[firstMoveIndex].count;
       // Undo the moves
       for (let depthIndex = 0; depthIndex < actualDepth; depthIndex++) {
         chess.ugly_undo();
@@ -124,11 +134,8 @@
       chess.ugly_undo();
     }
     // We now have scores for a lot of moves, and we want to find the best move
-    const evaluatedMoves = Object.keys(movesScores);
-    for (let moveIndex = 0; moveIndex < evaluatedMoves.length; moveIndex++) {
-      const moveScores = movesScores[evaluatedMoves[moveIndex]];
-      const averageMoveScore = moveScores.reduce((a, b) => a + b) * (BOT_COLOR === 'b' ? -1 : 1)/moveScores.length;
-      //console.log("averagMoveScore: ", averageMoveScore);
+    for (let moveIndex = 0; moveIndex < moves.length; moveIndex++) {
+      const averageMoveScore = movesScores[moveIndex].average;
       if (averageMoveScore > bestMoveScore) {
         bestMoveScore = averageMoveScore;
         bestMove = moves[moveIndex];
@@ -136,6 +143,7 @@
     }
     console.log("bestMoveScore: ", bestMoveScore);
     console.log("bestMove: ", bestMove);
+    console.log("movesScores: ", movesScores);
     return bestMove;
   }
   
