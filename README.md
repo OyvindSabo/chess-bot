@@ -4,7 +4,7 @@
 This is a Chess game in which you play aginst the computer. Apart from the game logic, which uses the chess.js library, I've made everything myself, including the whole interface, and the AI.
 
 ### Getting started
-Simply download the index.html file and open it in a browser. Alternatively, you can copy all the code in index.html into any JavaScript-compatible HTML editor, or you can simply play on https://oyvind.app/chess-4
+Simply download the index.html file and open it in a browser. Alternatively, you can copy all the code in index.html into any JavaScript-compatible HTML editor, or you can simply play on https://oyvind.app/chess
 
 ![Chess-bot.jpg](https://cdn.steemitimages.com/DQmac3MZ9sJh6LozeWCsftwvajskKzRK6UxgxdrzqFE1Voy/Chess-bot.jpg)
 
